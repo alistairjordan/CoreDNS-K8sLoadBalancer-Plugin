@@ -122,6 +122,7 @@ func (e *LoadBalancer) updateTicker() {
 			log.Fatalf("Record Update failed with %s", err)
 		}
 		e.updateRecords(records)
+		e.PluginReady = true
 		log.Debugf("Updated %d records", len(records))
 		time.Sleep(1600 * time.Millisecond)
 	}

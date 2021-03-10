@@ -21,6 +21,7 @@ var log = clog.NewWithPlugin("k8s_loadbalancer")
 
 // LoadBalancer is a plugin to show how to write a plugin.
 type LoadBalancer struct {
+	PluginReady    bool
 	KubeConfigPath string
 	EnableRootZone bool
 	EnableNSZone   bool
@@ -81,6 +82,7 @@ func (e LoadBalancer) Name() string { return "k8s_loadbalancer" }
 
 func NewLoadBalancer() *LoadBalancer {
 	lb := &LoadBalancer{}
+	lb.PluginReady = false
 	lb.RecordsSync = &sync.Mutex{}
 	lb.EnableNSZone = true
 	lb.EnableRootZone = true
