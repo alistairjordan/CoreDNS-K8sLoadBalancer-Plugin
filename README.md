@@ -1,4 +1,4 @@
-# example
+# Kubernetes LoadBalancer
 
 ## Name
 
