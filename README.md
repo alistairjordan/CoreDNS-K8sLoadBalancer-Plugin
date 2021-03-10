@@ -76,6 +76,25 @@ Or without any external connectivity:
 }
 ~~~
 
+Without any zones being specified, the plugin will default to the .kube. zone. 
+Additional zones can be added as below (This will add the test, and test2 zones)
+
+~~~ corefile
+. {
+  k8s_loadbalancer .test. .test2. {
+        enableNSZone true
+        enableRootZone true
+        kubeConfigPath /path/to/.kube/config
+  }
+}
+~~~
+
+Additonally Namespace Zones can be enabled for example:
+
+service.namespace.zone 
+
+This can be done using the enableNSZone flag (true/false)
+
 ## Also See
 
 See the [manual](https://coredns.io/manual).
