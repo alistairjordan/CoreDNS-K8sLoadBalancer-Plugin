@@ -13,6 +13,26 @@ import (
 	"github.com/miekg/dns"
 )
 
+func TestRemoveZoneSuffix(t *testing.T) {
+	x := LoadBalancer{Next: test.ErrorHandler()}
+	tests := []struct {
+		zones  []string
+		query  string
+		result string
+	}{
+		{
+			zones:  []string{".kube.", "kubernetes"},
+			query:  "testabc.kube.",
+			result: "testabc",
+		},
+	}
+	for _, test := range tests {
+		result := x.RemoveZoneSuffix(test.query, test.zones)
+		if result != test.result {
+			t.Errorf("Queried %s against %+v expecting %s, but got %s", test.query, test.zones, test.result, result)
+		}
+	}
+}
 func TestLoadBalancer(t *testing.T) {
 	// Create a new LoadBalancer Plugin. Use the test.ErrorHandler as the next plugin.
 	x := LoadBalancer{Next: test.ErrorHandler()}

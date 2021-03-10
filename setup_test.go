@@ -14,7 +14,9 @@ func TestSetup(t *testing.T) {
 		t.Fatalf("Expected no errors, but got: %v", err)
 	}
 
-	c = caddy.NewTestController("dns", `loadbalancer more`)
+	c = caddy.NewTestController("dns", `loadbalancer test {
+		broke broke
+	}`)
 	if err := setup(c); err == nil {
 		t.Fatalf("Expected errors, but got: %v", err)
 	}

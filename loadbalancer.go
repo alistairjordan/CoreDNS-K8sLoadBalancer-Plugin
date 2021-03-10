@@ -2,14 +2,15 @@ package loadbalancer
 
 import (
 	"context"
+	"net"
 	"strings"
+	"sync"
+
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/metrics"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
-	"net"
-	"sync"
 )
 
 const ttl = 30
@@ -20,27 +21,39 @@ var log = clog.NewWithPlugin("k8s_loadbalancer")
 
 // LoadBalancer is a plugin to show how to write a plugin.
 type LoadBalancer struct {
-	RecordsSync *sync.Mutex
-	Records []kubeRecord
-	Next plugin.Handler
+	KubeConfigPath string
+	EnableRootZone bool
+	EnableNSZone   bool
+	RootZones      []string
+	RecordsSync    *sync.Mutex
+	Records        []kubeRecord
+	Next           plugin.Handler
+}
+
+func (e LoadBalancer) RemoveZoneSuffix(name string, suffix []string) string {
+	for _, s := range suffix {
+		if strings.HasSuffix(name, s) {
+			length := len([]rune(name)) - len([]rune(s))
+			subname := name[:length]
+			return subname
+		}
+	}
+	return ""
 }
 
 // ServeDNS implements the plugin.Handler interface. This method gets called when kube zone is used
 // in a Server.
 func (e LoadBalancer) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-	domain := ".kube."
 	state := request.Request{W: w, Req: r}
 	qname := state.QName()
 	log.Debug("Received response")
 	log.Debugf("Intercepting localhost query for %q %s, from %s", state.Name(), state.Type(), state.IP())
 	pw := NewResponsePrinter(w)
+	name := e.RemoveZoneSuffix(state.Name(), e.RootZones)
 	// Check if in .kube subdomain
-	if strings.HasSuffix(state.Name(),domain) {
-		log.Debugf("Found Domain %s", domain)
-		subname := state.Name()[:len([]rune(state.Name())) - len([]rune(domain))]
-		log.Debugf("Subdomain is: %s of length %d",state.Name(), len([]rune(domain))-1)
-		log.Debugf("Finding record %s", subname)
-		record, found := e.getRecord(subname)
+	if name != "" {
+		log.Debugf("Finding record %s", name)
+		record, found := e.getRecord(name)
 		if found {
 			log.Debugf("Found Record %+v", record)
 
@@ -54,10 +67,10 @@ func (e LoadBalancer) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 			m.Answer = []dns.RR{&dns.A{Hdr: hdr, A: net.ParseIP(record.ip).To4()}}
 			//m.Ns = soaFromOrigin(qname)
 			//m.Answer = records
-			log.Debugf("Responding with %+v",m.Answer)
+			log.Debugf("Responding with %+v", m.Answer)
 			w.WriteMsg(m)
-		}	
-		
+		}
+
 	}
 	// Call next plugin (if any).
 	return plugin.NextOrFailure(e.Name(), e.Next, ctx, pw, r)
@@ -66,9 +79,12 @@ func (e LoadBalancer) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 // Name implements the Handler interface.
 func (e LoadBalancer) Name() string { return "k8s_loadbalancer" }
 
-func NewLoadBalancer() (*LoadBalancer) {
+func NewLoadBalancer() *LoadBalancer {
 	lb := &LoadBalancer{}
 	lb.RecordsSync = &sync.Mutex{}
+	lb.EnableNSZone = true
+	lb.EnableRootZone = true
+	lb.RootZones = []string{".kube."}
 	return lb
 }
 
