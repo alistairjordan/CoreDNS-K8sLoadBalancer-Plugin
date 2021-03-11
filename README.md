@@ -8,8 +8,12 @@
 
 The plugin currently takes services of type LoadBalancer from all namespaces and exports it to the .kube. zone.
 For example:
+```
   Service Name: test-wordpress
   DNS: test-wordpress.kube
+```
+
+This can be configured as shown in the configuration section below.
 
 ## Compilation
 
