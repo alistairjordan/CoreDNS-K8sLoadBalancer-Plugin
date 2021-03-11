@@ -94,9 +94,9 @@ Additional zones can be added as below (This will add the test, and test2 zones)
 ~~~
 
 Additonally Namespace Zones can be enabled for example:
-
+```
 service.namespace.zone 
-
+```
 This can be done using the enableNSZone flag (true/false)
 
 ## Also See
