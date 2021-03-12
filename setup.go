@@ -16,11 +16,8 @@ func init() { plugin.Register("k8s_loadbalancer", setup) }
 // for parsing any extra options the example plugin may have. The first token this function sees is "example".
 func setup(c *caddy.Controller) error {
 	e, err := parse(c)
-	c.Next() // Ignore "example" and give us the next token.
+	c.Next()
 	if c.NextArg() || err != nil {
-		// If there was another token, return an error, because we don't have any configuration.
-		// Any errors returned from this setup function should be wrapped with plugin.Error, so we
-		// can present a slightly nicer error message to the user.
 		return plugin.Error("k8s_loadbalancer", c.ArgErr())
 	}
 
